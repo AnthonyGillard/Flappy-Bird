@@ -79,4 +79,98 @@ class TestGameManager(unittest.TestCase):
         self.assertEqual(2, game_manager.active_state_index)
 
 
+class TestStartMenu(unittest.TestCase):
+    @patch('game_manager.StartGraphic')
+    def get_start_menu_and_building_mocks(self, mocked_start_graphic_init):
+        application = Mock()
+        application.create_start_menu = Mock()
+        application.SURFACE_WIDTH = 100
+        application.surface = 'surface'
+
+        mocked_start_graphic = Mock()
+        mocked_start_graphic_init.return_value = mocked_start_graphic
+
+        return StartMenu(application), application, mocked_start_graphic
+
+    def test_init_sets_application_as_expected(self):
+        start_menu, mocked_application, _ = self.get_start_menu_and_building_mocks()
+
+        self.assertEqual(mocked_application, start_menu.application)
+
+    def test_init_sets_start_graphic_as_expected(self):
+        start_menu, _, mocked_start_graphic = self.get_start_menu_and_building_mocks()
+
+        self.assertEqual(mocked_start_graphic, start_menu.start_graphic)
+
+    def test_handle_events_returns_running_true_when_no_exit_event(self):
+        start_menu, _, _ = self.get_start_menu_and_building_mocks()
+        event = Mock()
+        event.type = 0
+
+        running, active_game_state = start_menu.handle_events([event])
+
+        self.assertTrue(running)
+
+    def test_handle_events_returns_running_false_when_exit_event(self):
+        start_menu, _, _ = self.get_start_menu_and_building_mocks()
+        event = Mock()
+        event.type = 256
+
+        running, active_game_state = start_menu.handle_events([event])
+
+        self.assertFalse(running)
+
+    def test_handle_events_returns_active_game_state_zero_when_no_key_pressed(self):
+        start_menu, _, _ = self.get_start_menu_and_building_mocks()
+        event = Mock()
+        event.type = 0
+
+        running, active_game_state = start_menu.handle_events([event])
+
+        self.assertEqual(0, active_game_state)
+
+    def test_handle_events_returns_active_game_state_one_when_space_bar_pressed(self):
+        start_menu, _, _ = self.get_start_menu_and_building_mocks()
+        event = Mock()
+        event.type = 768
+        event.key = 32
+
+        running, active_game_state = start_menu.handle_events([event])
+
+        self.assertEqual(1, active_game_state)
+
+    @staticmethod
+    def get_mock_ground():
+        ground = Mock()
+        ground.draw = Mock()
+        ground.move = Mock()
+        return ground
+
+    def test_increment_game_through_time_moves_ground(self):
+        start_menu, _, _ = self.get_start_menu_and_building_mocks()
+        ground = self.get_mock_ground()
+        time_ms = 'time_ms'
+
+        start_menu.increment_game_through_time(time_ms, [ground])
+
+        ground.move.assert_called_once_with(time_ms)
+
+    def test_increment_game_through_time_creates_start_menu(self):
+        start_menu, _, _ = self.get_start_menu_and_building_mocks()
+        ground = self.get_mock_ground()
+        time_ms = 'time_ms'
+
+        start_menu.increment_game_through_time(time_ms, [ground])
+
+        start_menu.application.create_start_menu.assert_called_once_with([ground], start_menu.start_graphic)
+
+    def test_increment_game_through_time_draws_ground(self):
+        start_menu, _, _ = self.get_start_menu_and_building_mocks()
+        ground = self.get_mock_ground()
+        time_ms = 'time_ms'
+
+        start_menu.increment_game_through_time(time_ms, [ground])
+
+        ground.draw.assert_called_once_with('surface')
+
 
