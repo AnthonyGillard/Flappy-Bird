@@ -22,7 +22,7 @@ class TestGround(unittest.TestCase):
 
         ground, _, _, _, _ = self.get_ground_and_building_mocks(width, 500, 50, 1)
 
-        self.assertEqual(width, ground.width)
+        self.assertEqual(width * 1.05, ground.width)
 
     def test_init_populates_height_as_expected(self):
         height = 50
@@ -51,14 +51,14 @@ class TestGround(unittest.TestCase):
         start_out_of_window = 1
         ground, _, _, _, _ = self.get_ground_and_building_mocks(width, 500, 50, start_out_of_window)
 
-        self.assertEqual(ground.hit_box.x, 200)
+        self.assertEqual(210, ground.hit_box.x)
 
     def test_init_populates_hit_box_y_as_expected(self):
         window_height = 500
         ground_height = 50
         ground, _, _, _, _ = self.get_ground_and_building_mocks(200, window_height, ground_height, 1)
 
-        self.assertEqual(ground.hit_box.y, 450)
+        self.assertEqual(450, ground.hit_box.y)
 
     @patch('ground.calculate_derivative_multi_by_time', return_value=20)
     def test_move_changes_x_by_expected_when_on_screen(self, mocked_delta_calc):
@@ -67,9 +67,9 @@ class TestGround(unittest.TestCase):
 
         ground.move(1000)
 
-        self.assertEqual(ground.hit_box.x, 30)
+        self.assertEqual(30, ground.hit_box.x)
 
-    @patch('ground.calculate_derivative_multi_by_time', return_value=150)
+    @patch('ground.calculate_derivative_multi_by_time', return_value=200)
     def test_move_resets_x_when_hit_box_has_left_screen(self, mocked_delta_calc):
         width = 100
         ground, _, _, _, _ = self.get_ground_and_building_mocks(width, 500, 50, 1)
@@ -77,7 +77,7 @@ class TestGround(unittest.TestCase):
 
         ground.move(1000)
 
-        self.assertEqual(ground.hit_box.x, 100)
+        self.assertEqual(105, ground.hit_box.x)
 
     def test_draw_calls_blit_function_as_expected(self):
         ground, _, _, mocked_image, mocked_pg_rect = self.get_ground_and_building_mocks(200, 500, 50, 1)
