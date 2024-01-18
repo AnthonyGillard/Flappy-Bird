@@ -173,31 +173,38 @@ class TestStartMenu(unittest.TestCase):
 
 
 class TestGameRunning(unittest.TestCase):
+    @patch('game_manager.Pipes')
     @patch('game_manager.Player')
-    def get_game_running_and_building_mocks(self, mocked_player_init):
+    def get_game_running_and_building_mocks(self, mocked_player_init, mocked_pipes_init):
         application = Mock()
         application.create_game_running_view = Mock()
         application.SURFACE_WIDTH = 100
+        application.SURFACE_HEIGHT = 300
         application.surface = 'surface'
 
         mocked_player = Mock()
         mocked_player.jump = Mock()
+        mocked_player.move = Mock()
         mocked_player_init.return_value = mocked_player
 
-        return GameRunning(application), application, mocked_player
+        mocked_pipes = Mock()
+        mocked_pipes.move = Mock()
+        mocked_pipes_init.return_value = mocked_pipes
+
+        return GameRunning(application, 100), application, mocked_player, mocked_pipes
 
     def test_init_sets_application_as_expected(self):
-        game_running, mocked_application, _ = self.get_game_running_and_building_mocks()
+        game_running, mocked_application, _, _ = self.get_game_running_and_building_mocks()
 
         self.assertEqual(mocked_application, game_running.application)
 
     def test_init_sets_player_as_expected(self):
-        game_running, _, mocked_player = self.get_game_running_and_building_mocks()
+        game_running, _, mocked_player, _ = self.get_game_running_and_building_mocks()
 
         self.assertEqual(mocked_player, game_running.player)
 
     def test_handle_events_returns_running_true_when_no_exit_event(self):
-        game_running, _, _ = self.get_game_running_and_building_mocks()
+        game_running, _, _, _ = self.get_game_running_and_building_mocks()
         event = Mock()
         event.type = 0
 
@@ -206,7 +213,7 @@ class TestGameRunning(unittest.TestCase):
         self.assertTrue(running)
 
     def test_handle_events_returns_running_false_when_exit_event(self):
-        game_running, _, _ = self.get_game_running_and_building_mocks()
+        game_running, _, _, _ = self.get_game_running_and_building_mocks()
         event = Mock()
         event.type = 256
 
@@ -215,7 +222,7 @@ class TestGameRunning(unittest.TestCase):
         self.assertFalse(running)
 
     def test_handle_events_returns_active_game_state_one(self):
-        game_running, _, _ = self.get_game_running_and_building_mocks()
+        game_running, _, _, _ = self.get_game_running_and_building_mocks()
         event = Mock()
         event.type = 0
 
@@ -224,7 +231,7 @@ class TestGameRunning(unittest.TestCase):
         self.assertEqual(1, active_game_state)
 
     def test_handle_events_jumps_player_when_space_bar_pressed(self):
-        game_running, _, _ = self.get_game_running_and_building_mocks()
+        game_running, _, _, _ = self.get_game_running_and_building_mocks()
         event = Mock()
         event.type = 768
         event.key = 119
@@ -243,7 +250,7 @@ class TestGameRunning(unittest.TestCase):
     @patch('pygame.rect.Rect')
     def test_increment_game_through_time_moves_ground(self, mocked_rect):
         mocked_rect.colliderect = Mock(return_value=False)
-        game_running, _, _ = self.get_game_running_and_building_mocks()
+        game_running, _, _, _ = self.get_game_running_and_building_mocks()
         ground = self.get_mock_ground()
         time_ms = 'time_ms'
 
@@ -254,18 +261,19 @@ class TestGameRunning(unittest.TestCase):
     @patch('pygame.rect.Rect')
     def test_increment_game_through_time_creates_game_running_view(self, mocked_rect):
         mocked_rect.colliderect = Mock(return_value=False)
-        game_running, _, _ = self.get_game_running_and_building_mocks()
+        game_running, _, _, _ = self.get_game_running_and_building_mocks()
         ground = self.get_mock_ground()
         time_ms = 'time_ms'
 
         game_running.increment_game_through_time(time_ms, [ground])
 
-        game_running.application.create_game_running_view.assert_called_once_with([ground], game_running.player)
+        game_running.application.create_game_running_view.assert_called_once_with([ground], game_running.player,
+                                                                                  game_running.pipes)
 
     @patch('pygame.rect.Rect')
     def test_increment_game_through_time_returns_true_when_collision_detected(self, mocked_rect):
         mocked_rect.colliderect = Mock(return_value=True)
-        game_running, _, _ = self.get_game_running_and_building_mocks()
+        game_running, _, _, _ = self.get_game_running_and_building_mocks()
         ground = self.get_mock_ground()
         time_ms = 'time_ms'
 
