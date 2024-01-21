@@ -1,10 +1,11 @@
+import pygame
 from image_processing import ImageProcessing
 
 
-class StartGraphic:
-    FILE_PATH = "\\images\\start.png"
-    WIDTH = 176
-    HEIGHT = 77
+class GameOverGraphic:
+    FILE_PATH = "\\images\\game_over.png"
+    WIDTH = 192
+    HEIGHT = 71
 
     image_processor = ImageProcessing()
 
