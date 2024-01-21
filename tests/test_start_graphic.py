@@ -4,30 +4,21 @@ from start_graphic import StartGraphic
 
 
 class TestStartGraphic(unittest.TestCase):
-    @patch('pygame.image.load')
-    @patch('pygame.transform.scale')
-    def get_start_graphic_and_building_mocks(self, x_position, y_position, mocked_pg_scale, mocked_pg_load):
-        mocked_pg_rect = Mock()
-        mocked_image = Mock()
-        mocked_pg_load.return_value = 'image'
-
-        return StartGraphic(x_position, y_position), mocked_pg_load, mocked_pg_scale
+    @patch('pipes.ImageProcessing.load_and_scale_image', return_value='image')
+    def get_start_graphic_and_building_mocks(self, x_position, y_position, mocked_ip):
+        return StartGraphic('file_path', x_position, y_position), mocked_ip
 
     def test_init_loads_image(self):
-        start_graphic, mocked_pg_load, _ = self.get_start_graphic_and_building_mocks(10, 20)
+        start_graphic, mocked_ip = self.get_start_graphic_and_building_mocks(10, 20)
 
-        mocked_pg_load.assert_called_once_with(start_graphic.FILE_PATH)
-
-    def test_init_scales_image(self):
-        start_graphic, _, mocked_pg_scale = self.get_start_graphic_and_building_mocks(10, 20)
-
-        mocked_pg_scale.assert_called_once_with('image', (start_graphic.WIDTH, start_graphic.HEIGHT))
+        mocked_ip.assert_called_once_with(
+            'file_path' + start_graphic.FILE_PATH, start_graphic.WIDTH, start_graphic.HEIGHT)
 
     def test_init_populates_position_as_expected(self):
         width = 400
         height = 20
 
-        start_graphic, _, _ = self.get_start_graphic_and_building_mocks(width, height)
+        start_graphic, _ = self.get_start_graphic_and_building_mocks(width, height)
 
         self.assertTupleEqual((112, height), start_graphic.position)
 
@@ -36,7 +27,7 @@ class TestStartGraphic(unittest.TestCase):
         height = 20
         surface = Mock()
         surface.blit = Mock()
-        start_graphic, _, _ = self.get_start_graphic_and_building_mocks(width, height)
+        start_graphic, _ = self.get_start_graphic_and_building_mocks(width, height)
         start_graphic.image = 'image'
 
         start_graphic.draw(surface)

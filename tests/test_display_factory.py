@@ -4,39 +4,45 @@ from display_factory import DisplayFactory
 
 
 class TestDisplayFactor(unittest.TestCase):
+    @patch('pygame.font.SysFont')
     @patch('pygame.image.load', return_value='image')
-    @patch('pygame.transform.scale')
+    @patch('pipes.ImageProcessing.load_and_scale_image', return_value='background')
     @patch('pygame.display.set_mode')
     @patch('pygame.display.set_caption')
     @patch('pygame.display.set_icon')
     def get_display_factory_and_building_mocks(self, mocked_s_icon, mocked_s_caption, mocked_s_mode,
-                                               mocked_scale, mocked_load):
-        return DisplayFactory(), mocked_s_icon, mocked_s_caption, mocked_s_mode, mocked_scale, mocked_load
+                                               mocked_ip, mocked_load, mocked_font_init):
+        mocked_font = Mock()
+        mocked_font.render = Mock()
+        mocked_font_init.return_value = mocked_font
+        return DisplayFactory('file_path'), mocked_s_icon, mocked_s_caption, mocked_s_mode, mocked_ip, mocked_load,\
+            mocked_font
 
     def test_init_loads_background_image(self):
-        display_factory, _, _, _, _, mocked_load = self.get_display_factory_and_building_mocks()
+        set_up = self.get_display_factory_and_building_mocks()
 
-        mocked_load.assert_any_call(display_factory.BACKGROUND_FILE_PATH)
+        set_up[4].assert_called_once_with(
+            'file_path' + set_up[0].BACKGROUND_FILE_PATH, set_up[0].SURFACE_WIDTH, set_up[0].SURFACE_HEIGHT)
 
-    def test_init_scales_background_image(self):
-        display_factory, _, _, _, mocked_scale, _ = self.get_display_factory_and_building_mocks()
+    def test_init_loads_font(self):
+        set_up = self.get_display_factory_and_building_mocks()
 
-        mocked_scale.assert_called_once_with('image', (display_factory.SURFACE_WIDTH, display_factory.SURFACE_HEIGHT))
+        self.assertEqual(set_up[6], set_up[0].font)
 
     def test_init_creates_application_surface(self):
-        display_factory, _, _, mocked_s_mode, _, _ = self.get_display_factory_and_building_mocks()
+        set_up = self.get_display_factory_and_building_mocks()
 
-        mocked_s_mode.assert_called_once_with((display_factory.SURFACE_WIDTH, display_factory.SURFACE_HEIGHT))
+        set_up[3].assert_called_once_with((set_up[0].SURFACE_WIDTH, set_up[0].SURFACE_HEIGHT))
 
     def test_init_sets_application_caption(self):
-        display_factory, _, mocked_s_caption, _, _, _ = self.get_display_factory_and_building_mocks()
+        set_up = self.get_display_factory_and_building_mocks()
 
-        mocked_s_caption.assert_called_once_with('Flappy Bird')
+        set_up[2].assert_called_once_with('Flappy Bird')
 
     def test_init_set_application_icon(self):
-        display_factory, mocked_s_icon, _, _, _, _ = self.get_display_factory_and_building_mocks()
+        set_up = self.get_display_factory_and_building_mocks()
 
-        mocked_s_icon.assert_called_once_with('image')
+        set_up[1].assert_called_once_with('image')
 
     @staticmethod
     def add_mock_surface(display_factory):
@@ -60,36 +66,90 @@ class TestDisplayFactor(unittest.TestCase):
         return grounds
 
     @staticmethod
-    def get_mock_start_graphic():
-        start_graphic = Mock()
-        start_graphic.draw = Mock()
-        return start_graphic
+    def get_mock_asset():
+        asset = Mock()
+        asset.draw = Mock()
+        return asset
 
     def test_create_start_menu_sets_background(self):
-        display_factory, _, _, _, _, _ = self.get_display_factory_and_building_mocks()
-        self.add_mock_surface(display_factory)
+        set_up = self.get_display_factory_and_building_mocks()
+        self.add_mock_surface(set_up[0])
 
-        display_factory.create_start_menu(self.get_mock_grounds(), self.get_mock_start_graphic())
+        set_up[0].create_start_menu(self.get_mock_grounds(), self.get_mock_asset())
 
-        display_factory.surface.blit.assert_called_once_with(display_factory.background, (0, 0))
+        set_up[0].surface.blit.assert_called_once_with(set_up[0].background, (0, 0))
 
     def test_create_start_menu_adds_ground(self):
-        display_factory, _, _, _, _, _ = self.get_display_factory_and_building_mocks()
-        self.add_mock_surface(display_factory)
+        set_up = self.get_display_factory_and_building_mocks()
+        self.add_mock_surface(set_up[0])
         grounds = self.get_mock_grounds()
 
-        display_factory.create_start_menu(grounds, self.get_mock_start_graphic())
+        set_up[0].create_start_menu(grounds, self.get_mock_asset())
 
-        grounds[0].draw.assert_called_once_with(display_factory.surface)
-        grounds[1].draw.assert_called_once_with(display_factory.surface)
+        grounds[0].draw.assert_called_once_with(set_up[0].surface)
+        grounds[1].draw.assert_called_once_with(set_up[0].surface)
 
     def test_create_start_menu_adds_start_graphic(self):
-        display_factory, _, _, _, _, _ = self.get_display_factory_and_building_mocks()
-        self.add_mock_surface(display_factory)
-        start_graphic = self.get_mock_start_graphic()
+        set_up = self.get_display_factory_and_building_mocks()
+        self.add_mock_surface(set_up[0])
+        start_graphic = self.get_mock_asset()
 
-        display_factory.create_start_menu(self.get_mock_grounds(), start_graphic)
+        set_up[0].create_start_menu(self.get_mock_grounds(), start_graphic)
 
-        start_graphic.draw.assert_called_once_with(display_factory.surface)
+        start_graphic.draw.assert_called_once_with(set_up[0].surface)
+
+    def test_create_game_running_view_draws_pipes(self):
+        set_up = self.get_display_factory_and_building_mocks()
+        self.add_mock_surface(set_up[0])
+        grounds = self.get_mock_grounds()
+        pipes = self.get_mock_grounds()
+        player = self.get_mock_asset()
+        score = 25
+
+        set_up[0].create_game_running_view(grounds, player, pipes, score)
+
+        pipes[0].draw.assert_called_once_with(set_up[0].surface)
+        pipes[1].draw.assert_called_once_with(set_up[0].surface)
+
+    def test_create_game_running_view_draws_player(self):
+        set_up = self.get_display_factory_and_building_mocks()
+        self.add_mock_surface(set_up[0])
+        grounds = self.get_mock_grounds()
+        pipes = self.get_mock_grounds()
+        player = self.get_mock_asset()
+        score = 25
+
+        set_up[0].create_game_running_view(grounds, player, pipes, score)
+
+        player.draw.assert_called_once_with(set_up[0].surface)
+
+    def test_create_game_running_view_draws_text(self):
+        set_up = self.get_display_factory_and_building_mocks()
+        self.add_mock_surface(set_up[0])
+        grounds = self.get_mock_grounds()
+        pipes = self.get_mock_grounds()
+        player = self.get_mock_asset()
+        score = 25
+
+        rect = Mock()
+        score_text = Mock()
+        score_text.get_rect = Mock(return_value=rect)
+        set_up[0].font = Mock()
+        set_up[0].font.render = Mock(return_value=score_text)
+
+        set_up[0].create_game_running_view(grounds, player, pipes, score)
+
+        set_up[0].surface.blit.assert_any_call(score_text, rect)
+
+    def test_game_over_view_draws_game_over_graphic(self):
+        set_up = self.get_display_factory_and_building_mocks()
+        self.add_mock_surface(set_up[0])
+        grounds = self.get_mock_grounds()
+        game_over = self.get_mock_asset()
+        score = 25
+
+        set_up[0].create_game_over(grounds, game_over, score)
+
+        game_over.draw.assert_called_once_with(set_up[0].surface)
 
 

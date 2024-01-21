@@ -6,7 +6,7 @@ FPS = 30
 
 pygame.init()
 
-game_manager = GameManager()
+game_manager = GameManager(os.getcwd())
 
 clock = pygame.time.Clock()
 
